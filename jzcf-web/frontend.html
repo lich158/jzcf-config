@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>配置管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            padding: 0;
+            margin: 0;
+            background-color: #f5f5f5;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .container {
+            width: 100%;
+            height: 100vh;
+            margin: 0;
+            background: white;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+        h2 {
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            padding: 4px;
+            flex-shrink: 0;
+        }
+        .difficulty-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .difficulty-selector label {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .difficulty-selector select {
+            padding: 4px 8px;
+            font-size: 14px;
+        }
+        button {
+            padding: 6px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 3px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+            overflow: hidden;
+            min-height: 0;
+            align-items: stretch;
+        }
+        .table-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-height: 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fafafa;
+        }
+        .table-section h3 {
+            font-size: 14px;
+            margin: 0;
+            padding: 6px;
+            background: linear-gradient(to bottom, #4a90e2, #357abd);
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 4px 4px 0 0;
+        }
+        .table-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
+            background-color: white;
+        }
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .config-table th,
+        .config-table td {
+            padding: 5px 4px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        .config-table th {
+            background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+            font-weight: bold;
+            font-size: 13px;
+            color: #333;
+        }
+        .config-table td {
+            background-color: #fff;
+        }
+        .config-table tbody tr:hover {
+            background-color: #f5f5f5;
+        }
+        .field-label {
+            text-align: left;
+            font-weight: bold;
+            width: 150px;
+            padding-left: 8px !important;
+            padding-right: 4px !important;
+            font-size: 13px;
+            color: #333;
+        }
+        .default-value {
+            background: linear-gradient(to bottom, #e8f4f8, #d1e7dd);
+            font-weight: bold;
+            width: 100px;
+            padding-left: 4px !important;
+            padding-right: 4px !important;
+            font-size: 13px;
+            color: #2c3e50;
+        }
+        .input-value {
+            width: 90px;
+            padding: 3px !important;
+        }
+        .input-value input {
+            width: 100%;
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 13px;
+            transition: border-color 0.3s;
+        }
+        .input-value input:focus {
+            outline: none;
+            border-color: #4a90e2;
+            box-shadow: 0 0 3px rgba(74, 144, 226, 0.3);
+        }
+        .note {
+            font-size: 11px;
+            color: #666;
+            font-style: italic;
+            margin-left: 4px;
+        }
+        .section-header {
+            background: linear-gradient(to bottom, #e0e0e0, #d0d0d0) !important;
+            font-weight: bold;
+            font-size: 13px;
+            padding: 4px !important;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>配置管理</h2>
+    <div class="header">
+        <div class="difficulty-selector">
+            <label>选择难度：</label>
+            <select id="difficulty" onchange="changeDifficulty()">
+                <option value="1">难度1</option>
+                <option value="2">难度2</option>
+                <option value="3">难度3</option>
+                <option value="4">难度4</option>
+                <option value="5">难度5</option>
+                <option value="6">难度6</option>
+                <option value="7">难度7</option>
+                <option value="8">难度8</option>
+                <option value="9">难度9</option>
+            </select>
+        </div>
+        <button type="button" onclick="send()">发送配置</button>
+    </div>
+    
+    <form id="configForm">
+        <!-- 基础配置 -->
+        <div class="table-section" style="flex: 0 0 auto; margin-bottom: 6px;">
+            <h3>基础配置</h3>
+            <div class="table-wrapper" style="overflow: visible; max-height: none;">
+                <table class="config-table">
+                    <thead>
+                        <tr>
+                            <th class="field-label">字段</th>
+                            <th>默认值</th>
+                            <th>输入新值</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="field-label">比倍难度 (%)</td>
+                            <td class="default-value" id="default-比倍难度">0</td>
+                            <td class="input-value"><input type="number" id="比倍难度" placeholder="新值"/></td>
+                        </tr>
+                        <tr>
+                            <td class="field-label">吃分最大值</td>
+                            <td class="default-value" id="default-吃分最大值">0</td>
+                            <td class="input-value"><input type="number" id="吃分最大值" placeholder="新值"/></td>
+                        </tr>
+                        <tr>
+                            <td class="field-label">吃分最小值</td>
+                            <td class="default-value" id="default-吃分最小值">0</td>
+                            <td class="input-value"><input type="number" id="吃分最小值" placeholder="新值"/></td>
+                        </tr>
+                        <tr>
+                            <td class="field-label">吃分返奖率 (%)</td>
+                            <td class="default-value" id="default-吃分返奖率">0</td>
+                            <td class="input-value"><input type="number" id="吃分返奖率" placeholder="新值"/></td>
+                        </tr>
+                        <tr>
+                            <td class="field-label">营业返奖率 (%)</td>
+                            <td class="default-value" id="default-营业返奖率">0</td>
+                            <td class="input-value"><input type="number" id="营业返奖率" placeholder="新值"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 左右两列布局 -->
+        <div class="content-wrapper">
+            <!-- 左侧：开奖奖项 -->
+            <div class="table-section">
+                <h3>开奖奖项（每10000把出现的次数，总和应为10000）</h3>
+                <div class="table-wrapper">
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th class="field-label">字段</th>
+                                <th>默认值</th>
+                                <th>输入新值</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                <tr>
+                    <td class="field-label">三倍小奖 <span class="note">(3倍)</span></td>
+                    <td class="default-value" id="default-三倍小奖">0</td>
+                    <td class="input-value"><input type="number" id="三倍小奖" placeholder="新值"/></td>
+                </tr>
+                <tr>
+                    <td class="field-label">苹果 <span class="note">(5倍)</span></td>
+                    <td class="default-value" id="default-苹果">0</td>
+                    <td class="input-value"><input type="number" id="苹果" placeholder="新值"/></td>
+                </tr>
+                <tr>
+                    <td class="field-label">橘子 <span class="note">(10倍)</span></td>
+                    <td class="default-value" id="default-橘子">0</td>
+                    <td class="input-value"><input type="number" id="橘子" placeholder="新值"/></td>
+                </tr>
+                <tr>
+                    <td class="field-label">柠檬 <span class="note">(15倍)</span></td>
+                    <td class="default-value" id="default-柠檬">0</td>
+                    <td class="input-value"><input type="number" id="柠檬" placeholder="新值"/></td>
+                </tr>
+                <tr>
+                    <td class="field-label">金钟 <span class="note">(20倍)</span></td>
+                    <td class="default-value" id="default-金钟">0</td>
+                    <td class="input-value"><input type="number" id="金钟" placeholder="新值"/></td>
+                </tr>
+                <tr>
+                    <td class="field-label">西瓜 <span class="note">(20倍)</span></td>
+                    <td class="default-value" id="default-西瓜">0</td>
+                    <td class="input-value"><input type="number" id="西瓜" placeholder="新值"/></td>
+                </tr>
+                <tr>
+                    <td class="field-label">双星 <span class="note">(30倍)</span></td>
+                    <td class="default-value" id="default-双星">0</td>
+                    <td class="input-value"><input type="number" id="双星" placeholder="新值"/></td>
+                </tr>
+                <tr>
+                    <td class="field-label">99 <span class="note">(40倍)</span></td>
+                    <td class="default-value" id="default-99">0</td>
+                    <td class="input-value"><input type="number" id="99" placeholder="新值"/></td>
+                </tr>
+                <tr>
+                    <td class="field-label">小bar <span class="note">(30倍)</span></td>
+                    <td class="default-value" id="default-小bar">0</td>
+                    <td class="input-value"><input type="number" id="小bar" placeholder="新值"/></td>
+                </tr>
+                <tr>
+                    <td class="field-label">中bar <span class="note">(60倍)</span></td>
+                    <td class="default-value" id="default-中bar">0</td>
+                    <td class="input-value"><input type="number" id="中bar" placeholder="新值"/></td>
+                </tr>
+                <tr>
+                    <td class="field-label">大bar <span class="note">(120倍)</span></td>
+                    <td class="default-value" id="default-大bar">0</td>
+                    <td class="input-value"><input type="number" id="大bar" placeholder="新值"/></td>
+                </tr>
+                            <tr>
+                                <td class="field-label">金猪奖 <span class="note" id="note-金猪奖">(加奖)</span></td>
+                                <td class="default-value" id="default-金猪奖">0</td>
+                                <td class="input-value"><input type="number" id="金猪奖" placeholder="新值"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 右侧：加奖奖项 -->
+            <div class="table-section">
+                <h3>加奖奖项（每10000把出现的次数，总和应为10000）</h3>
+                <div class="table-wrapper">
+                    <table class="config-table">
+                        <thead>
+                            <tr>
+                                <th class="field-label">字段</th>
+                                <th>默认值</th>
+                                <th>输入新值</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="field-label">双响炮</td>
+                                <td class="default-value" id="default-双响炮">0</td>
+                                <td class="input-value"><input type="number" id="双响炮" placeholder="新值"/></td>
+                            </tr>
+                            <tr>
+                                <td class="field-label">大四喜</td>
+                                <td class="default-value" id="default-大四喜">0</td>
+                                <td class="input-value"><input type="number" id="大四喜" placeholder="新值"/></td>
+                            </tr>
+                            <tr>
+                                <td class="field-label">小三元</td>
+                                <td class="default-value" id="default-小三元">0</td>
+                                <td class="input-value"><input type="number" id="小三元" placeholder="新值"/></td>
+                            </tr>
+                            <tr>
+                                <td class="field-label">大三元</td>
+                                <td class="default-value" id="default-大三元">0</td>
+                                <td class="input-value"><input type="number" id="大三元" placeholder="新值"/></td>
+                            </tr>
+                            <tr>
+                                <td class="field-label">彩金</td>
+                                <td class="default-value" id="default-彩金">0</td>
+                                <td class="input-value"><input type="number" id="彩金" placeholder="新值"/></td>
+                            </tr>
+                            <tr>
+                                <td class="field-label">开火车</td>
+                                <td class="default-value" id="default-开火车">0</td>
+                                <td class="input-value"><input type="number" id="开火车" placeholder="新值"/></td>
+                            </tr>
+                            <tr>
+                                <td class="field-label">统统有奖</td>
+                                <td class="default-value" id="default-统统有奖">0</td>
+                                <td class="input-value"><input type="number" id="统统有奖" placeholder="新值"/></td>
+                            </tr>
+                            <tr>
+                                <td class="field-label">大满贯</td>
+                                <td class="default-value" id="default-大满贯">0</td>
+                                <td class="input-value"><input type="number" id="大满贯" placeholder="新值"/></td>
+                            </tr>
+                            <tr>
+                                <td class="field-label">仙女散花</td>
+                                <td class="default-value" id="default-仙女散花">0</td>
+                                <td class="input-value"><input type="number" id="仙女散花" placeholder="新值"/></td>
+                            </tr>
+                            <tr>
+                                <td class="field-label">小猫变身</td>
+                                <td class="default-value" id="default-小猫变身">0</td>
+                                <td class="input-value"><input type="number" id="小猫变身" placeholder="新值"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </form>
+
+<script>
+// 所有字段的key
+const fields = ['比倍难度', '吃分最大值', '吃分最小值', '吃分返奖率', '营业返奖率', 
+                '三倍小奖', '苹果', '橘子', '柠檬', '金钟', '西瓜', '双星', '99',
+                '小bar', '中bar', '大bar', '金猪奖',
+                '双响炮', '大四喜', '小三元', '大三元', '彩金', '开火车', '统统有奖', '大满贯', '仙女散花', '小猫变身'];
+
+// 为每个难度存储默认值
+let defaultValues = {};
+
+// 初始化：从服务器获取默认值
+async function initDefaultValues() {
+    try {
+        const response = await fetch('/api/defaults');
+        const serverData = await response.json();
+        
+        // 将服务器数据转换为本地格式
+        // 支持新格式（对象，难度作为key，格式：难度1、难度2...）和旧格式（数组）
+        if (Array.isArray(serverData)) {
+            // 旧格式：数组
+            serverData.forEach(item => {
+                const difficulty = item.难度 || item.difficulty;
+                defaultValues[difficulty] = {};
+                fields.forEach(field => {
+                    defaultValues[difficulty][field] = item[field] || 0;
+                });
+            });
+        } else {
+            // 新格式：对象，难度作为key（格式：难度1、难度2...）
+            for (const difficultyKey in serverData) {
+                // 支持"难度1"、"难度2"格式，也兼容"1"、"2"格式
+                let difficulty;
+                if (difficultyKey.startsWith("难度")) {
+                    difficulty = parseInt(difficultyKey.substring(2));
+                } else {
+                    difficulty = parseInt(difficultyKey);
+                }
+                if (!isNaN(difficulty) && difficulty >= 1 && difficulty <= 9) {
+                    defaultValues[difficulty] = {};
+                    fields.forEach(field => {
+                        defaultValues[difficulty][field] = serverData[difficultyKey][field] || 0;
+                    });
+                }
+            }
+        }
+        
+        // 显示当前难度的值
+        changeDifficulty();
+    } catch (error) {
+        console.error('获取默认值失败:', error);
+        // 如果获取失败，使用服务器默认值
+        changeDifficulty();
+    }
+}
+
+// 切换难度时更新显示
+function changeDifficulty() {
+    const difficulty = parseInt(document.getElementById('difficulty').value);
+    const percentageFields = ['比倍难度', '吃分返奖率', '营业返奖率'];
+    
+    fields.forEach(field => {
+        const defaultValue = defaultValues[difficulty] ? defaultValues[difficulty][field] : 0;
+        let displayValue = defaultValue;
+        if (percentageFields.includes(field)) {
+            displayValue = defaultValue + '%';
+        }
+        
+        // 更新默认值显示
+        const defaultElement = document.getElementById('default-' + field);
+        if (defaultElement) {
+            defaultElement.textContent = displayValue;
+        }
+        
+        // 更新金猪奖的备注显示
+        if (field === '金猪奖') {
+            const noteElement = document.getElementById('note-金猪奖');
+            if (noteElement) {
+                noteElement.textContent = '(' + defaultValue + '倍)';
+            }
+        }
+        
+        // 清空输入框
+        const inputElement = document.getElementById(field);
+        if (inputElement) {
+            inputElement.value = '';
+        }
+    });
+}
+
+// 发送配置
+function send(){
+    const difficulty = parseInt(document.getElementById('difficulty').value);
+    const form = document.getElementById('configForm');
+    const percentageFields = ['比倍难度', '吃分返奖率', '营业返奖率'];
+    let hasNewValue = false;
+    
+    // 先处理当前难度的新值
+    fields.forEach(field => {
+        const input = document.getElementById(field);
+        if (!input) return;
+        
+        const newValue = input.value.trim();
+        
+        if (newValue !== '') {
+            // 更新默认值
+            defaultValues[difficulty][field] = parseFloat(newValue);
+            // 更新显示的默认值（带格式）
+            let displayValue = newValue;
+            if (percentageFields.includes(field)) {
+                displayValue = newValue + '%';
+            }
+            const defaultElement = document.getElementById('default-' + field);
+            if (defaultElement) {
+                defaultElement.textContent = displayValue;
+            }
+            
+            // 更新金猪奖的备注显示
+            if (field === '金猪奖') {
+                const noteElement = document.getElementById('note-金猪奖');
+                if (noteElement) {
+                    noteElement.textContent = '(' + newValue + '倍)';
+                }
+            }
+            
+            // 清空输入框
+            input.value = '';
+            hasNewValue = true;
+        }
+    });
+    
+    // 构建包含所有难度（1-9）的JSON对象，难度作为key（格式：难度1、难度2...）
+    const allDifficultiesData = {};
+    for (let d = 1; d <= 9; d++) {
+        const difficultyData = {};
+        fields.forEach(field => {
+            difficultyData[field] = defaultValues[d][field];
+        });
+        allDifficultiesData[`难度${d}`] = difficultyData;
+    }
+    
+    // 打印发送的数据
+    console.log('发送的配置数据:');
+    console.log(JSON.stringify(allDifficultiesData, null, 2));
+    
+    fetch('/send', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(allDifficultiesData)
+    })
+    .then(r => r.text())
+    .then(alert);
+}
+
+// 页面加载时初始化
+initDefaultValues(); // 异步函数，内部会调用changeDifficulty()
+</script>
+
+</body>
+</html>
+
