@@ -1,0 +1,41 @@
+INFO:     Started server process [59143]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:9092 (Press CTRL+C to quit)
+INFO:     192.168.0.4:50318 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:50318 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:50318 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:50318 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:50318 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:50318 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:50318 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:50318 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:50318 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:50318 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:50318 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:50318 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:58752 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:63438 - "WebSocket /ws/lightweight" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     192.168.0.4:53670 - "WebSocket /ws/lightweight" [accepted]
+INFO:     connection open
+轻量级设备连接: Address(host='192.168.0.4', port=63438), 当前轻量级连接数: 1
+已向新连接的轻量级设备发送初始配置
+轻量级设备连接: Address(host='192.168.0.4', port=53670), 当前轻量级连接数: 2
+已向新连接的轻量级设备发送初始配置
+INFO:     192.168.0.4:59796 - "GET / HTTP/1.1" 200 OK
+INFO:     192.168.0.4:59796 - "GET /api/defaults HTTP/1.1" 401 Unauthorized
+INFO:     192.168.0.4:59796 - "GET /api/defaults HTTP/1.1" 200 OK
+INFO:     192.168.0.4:62078 - "GET /api/defaults HTTP/1.1" 200 OK

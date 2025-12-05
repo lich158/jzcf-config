@@ -19,123 +19,99 @@ from collections import defaultdict
 class AppSimulator:
     """App模拟器类"""
     
-    def __init__(self, uri: str = "ws://localhost:9091/ws/app"):
+    def __init__(self, uri: str = "ws://localhost:9092/ws/lightweight"):
         self.uri = uri
         self.received_configs = {}
         self.message_count = 0
     
-    def validate_config(self, difficulty_key: str, config: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_config(self, difficulty_key: str, config: Dict[str, Any]) -> Dict[str, list]:
         """
         验证配置数据
-        返回验证结果和问题列表
+        返回包含问题和警告的字典
         """
         issues = []
         warnings = []
         
-        # 开奖奖项字段
-        prize_fields = ['三倍小奖', '苹果', '橘子', '柠檬', '金钟', '西瓜', 
-                        '双星', '99', '小bar', '中bar', '大bar', '金猪奖']
-        
-        # 加奖奖项字段
-        bonus_fields = ['双响炮', '大四喜', '小三元', '大三元', '彩金', 
-                        '开火车', '统统有奖', '大满贯', '仙女散花', '小猫变身']
-        
         # 检查开奖总和
+        prize_fields = ['三倍小奖', '苹果', '橘子', '柠檬', '金钟', '西瓜', '双星', '99', 
+                       '小bar', '中bar', '大bar', '金猪奖']
         prize_total = sum(config.get(field, 0) for field in prize_fields)
         if prize_total != 10000:
             issues.append(f"开奖总和错误: {prize_total} (应为10000)")
         
         # 检查加奖总和
+        bonus_fields = ['双响炮', '大四喜', '小三元', '大三元', '彩金', '开火车', '统统有奖', '大满贯', '仙女散花', '小猫变身']
         bonus_total = sum(config.get(field, 0) for field in bonus_fields)
         if bonus_total != 10000:
             issues.append(f"加奖总和错误: {bonus_total} (应为10000)")
         
-        # 检查负数
-        for field in prize_fields + bonus_fields:
-            value = config.get(field, 0)
-            if value < 0:
-                issues.append(f"{field} 为负数: {value}")
-            elif value == 0 and field != '金猪奖':  # 金猪奖可以为0（加奖入口）
-                warnings.append(f"{field} 为0，可能配置错误")
+        # 检查金猪奖是否为负数
+        golden_pig_award = config.get('金猪奖', 0)
+        if golden_pig_award < 0:
+            issues.append(f"金猪奖为负数: {golden_pig_award}")
         
-        # 检查金猪奖（特殊处理：加奖入口，不应该有倍数）
-        jinzhu_value = config.get('金猪奖', 0)
-        if jinzhu_value < 0:
-            issues.append(f"金猪奖为负数: {jinzhu_value} (金猪奖是加奖入口，不应为负)")
+        # 检查基础参数范围
+        if config.get('比倍难度', 0) < 0 or config.get('比倍难度', 0) > 100:
+            warnings.append(f"比倍难度超出合理范围: {config.get('比倍难度', 0)}%")
         
-        # 检查基础参数
-        if config.get('吃分最小值', 0) >= config.get('吃分最大值', 0):
-            issues.append(f"吃分最小值({config.get('吃分最小值')}) >= 吃分最大值({config.get('吃分最大值')})")
+        if config.get('吃分返奖率', 0) < 0 or config.get('吃分返奖率', 0) > 100:
+            warnings.append(f"吃分返奖率超出合理范围: {config.get('吃分返奖率', 0)}%")
         
-        if not (0 <= config.get('比倍难度', 0) <= 100):
-            issues.append(f"比倍难度超出范围: {config.get('比倍难度')}")
+        if config.get('营业返奖率', 0) < 0 or config.get('营业返奖率', 0) > 100:
+            warnings.append(f"营业返奖率超出合理范围: {config.get('营业返奖率', 0)}%")
         
-        if not (0 <= config.get('吃分返奖率', 0) <= 100):
-            issues.append(f"吃分返奖率超出范围: {config.get('吃分返奖率')}")
+        # 检查金猪奖范围（基于优化策略）
+        if golden_pig_award < 300 or golden_pig_award > 750:
+            warnings.append(f"金猪奖 {golden_pig_award} 可能不在推荐范围300-750内")
+        
+        # 检查三倍小奖范围（基于优化策略）
+        three_times_small = config.get('三倍小奖', 0)
+        if three_times_small < 4700 or three_times_small > 5150:
+            warnings.append(f"三倍小奖 {three_times_small} 可能不在推荐范围4700-5150内")
         
         return {
-            'valid': len(issues) == 0,
             'issues': issues,
-            'warnings': warnings,
-            'prize_total': prize_total,
-            'bonus_total': bonus_total
+            'warnings': warnings
         }
     
     def format_config_display(self, difficulty_key: str, config: Dict[str, Any]) -> str:
-        """格式化配置显示"""
+        """格式化显示配置数据"""
         lines = []
-        lines.append(f"\n{'='*80}")
-        lines.append(f"【{difficulty_key}】配置详情")
-        lines.append(f"{'='*80}")
+        lines.append(f"【{difficulty_key}】")
         
         # 基础配置
-        lines.append("\n【基础配置】")
-        lines.append(f"  比倍难度: {config.get('比倍难度', 0)}%")
-        lines.append(f"  吃分最大值: {config.get('吃分最大值', 0):,}")
-        lines.append(f"  吃分最小值: {config.get('吃分最小值', 0):,}")
-        lines.append(f"  吃分返奖率: {config.get('吃分返奖率', 0)}%")
-        lines.append(f"  营业返奖率: {config.get('营业返奖率', 0)}%")
+        lines.append("  基础配置:")
+        lines.append(f"    比倍难度: {config.get('比倍难度', 0)}%")
+        lines.append(f"    吃分最大值: {config.get('吃分最大值', 0)}")
+        lines.append(f"    吃分最小值: {config.get('吃分最小值', 0)}")
+        lines.append(f"    吃分返奖率: {config.get('吃分返奖率', 0)}%")
+        lines.append(f"    营业返奖率: {config.get('营业返奖率', 0)}%")
         
         # 开奖奖项
-        lines.append("\n【开奖奖项】（每10000把出现的次数，总和应为10000）")
-        prize_fields = ['三倍小奖', '苹果', '橘子', '柠檬', '金钟', '西瓜', 
-                        '双星', '99', '小bar', '中bar', '大bar', '金猪奖']
-        
-        prize_multipliers = {
-            '三倍小奖': 3, '苹果': 5, '橘子': 10, '柠檬': 15, '金钟': 20,
-            '西瓜': 20, '双星': 30, '99': 40, '小bar': 30, '中bar': 60,
-            '大bar': 120, '金猪奖': None  # 金猪奖是加奖入口，没有倍数
-        }
-        
+        lines.append("  开奖奖项 (每10000把出现的次数):")
+        prize_fields = ['三倍小奖', '苹果', '橘子', '柠檬', '金钟', '西瓜', '双星', '99', 
+                       '小bar', '中bar', '大bar', '金猪奖']
         prize_total = 0
         for field in prize_fields:
             value = config.get(field, 0)
             prize_total += value
-            multiplier = prize_multipliers.get(field)
-            if multiplier:
-                lines.append(f"  {field:8s}: {value:5d}  (倍数: {multiplier:3d})")
-            else:
-                lines.append(f"  {field:8s}: {value:5d}  (加奖入口，无倍数)")
-        
-        lines.append(f"  开奖总和: {prize_total:,} {'✓' if prize_total == 10000 else '✗'}")
+            lines.append(f"    {field}: {value}")
+        lines.append(f"    开奖总计: {prize_total}")
         
         # 加奖奖项
-        lines.append("\n【加奖奖项】（每10000把出现的次数，总和应为10000）")
-        bonus_fields = ['双响炮', '大四喜', '小三元', '大三元', '彩金', 
-                        '开火车', '统统有奖', '大满贯', '仙女散花', '小猫变身']
-        
+        lines.append("  加奖奖项 (每10000把出现的次数):")
+        bonus_fields = ['双响炮', '大四喜', '小三元', '大三元', '彩金', '开火车', '统统有奖', '大满贯', '仙女散花', '小猫变身']
         bonus_total = 0
         for field in bonus_fields:
             value = config.get(field, 0)
             bonus_total += value
-            lines.append(f"  {field:8s}: {value:5d}")
-        
-        lines.append(f"  加奖总和: {bonus_total:,} {'✓' if bonus_total == 10000 else '✗'}")
+            lines.append(f"    {field}: {value}")
+        lines.append(f"    加奖总计: {bonus_total}")
         
         # 验证结果
         validation = self.validate_config(difficulty_key, config)
         if validation['issues']:
-            lines.append(f"\n【验证结果】✗ 发现 {len(validation['issues'])} 个问题:")
+            lines.append(f"\n【验证结果】⚠ 发现 {len(validation['issues'])} 个问题:")
             for issue in validation['issues']:
                 lines.append(f"  ⚠ {issue}")
         else:
@@ -173,7 +149,8 @@ class AppSimulator:
                         print(f"收到消息 #{self.message_count}")
                         print(f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
                         print(f"类型: {data.get('type', 'unknown')}")
-                        print(f"时间戳: {data.get('timestamp', 'N/A')}")
+                        if 'timestamp' in data:
+                            print(f"时间戳: {data['timestamp']}")
                         print(f"{'#'*80}")
                         
                         if 'data' in data:
@@ -228,9 +205,7 @@ class AppSimulator:
         except websockets.exceptions.ConnectionRefused:
             print(f"\n✗ 连接被拒绝")
             print(f"请确保服务器正在运行:")
-            print(f"  python3 web.py")
-            print(f"  或")
-            print(f"  python3 web_v2.py")
+            print(f"  python3 lightweight_backend.py")
             sys.exit(1)
         except KeyboardInterrupt:
             print(f"\n\n{'='*80}")
@@ -249,20 +224,19 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description='App模拟器 - 模拟Android App连接并接收配置')
-    parser.add_argument('--uri', type=str, default='ws://localhost:9091/ws/app',
-                       help='WebSocket服务器地址（默认: ws://localhost:9091/ws/app）')
+    parser.add_argument('--uri', type=str, default='ws://localhost:9092/ws/lightweight',
+                       help='WebSocket服务器地址（默认: ws://localhost:9092/ws/lightweight）')
     parser.add_argument('--host', type=str, default='localhost',
                        help='服务器主机（默认: localhost）')
-    parser.add_argument('--port', type=int, default=9091,
-                       help='服务器端口（默认: 9091）')
+    parser.add_argument('--port', type=int, default=9092,
+                       help='服务器端口（默认: 9092）')
+    parser.add_argument('--endpoint', type=str, default='/ws/lightweight',
+                       help='WebSocket端点（默认: /ws/lightweight）')
     
     args = parser.parse_args()
     
-    # 如果指定了host或port，构建URI
-    if args.host != 'localhost' or args.port != 9091:
-        uri = f"ws://{args.host}:{args.port}/ws/app"
-    else:
-        uri = args.uri
+    # 构造完整URI
+    uri = f"ws://{args.host}:{args.port}{args.endpoint}"
     
     simulator = AppSimulator(uri)
     

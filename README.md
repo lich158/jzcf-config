@@ -228,7 +228,9 @@ App模拟器启动
 
 ### 核心文件
 
-- `web.py` - 主服务器（FastAPI + WebSocket，端口9091）
+- `web.py` - 主服务器（FastAPI + WebSocket，端口9090）
+- `backend.py` - 后端API服务（FastAPI + WebSocket，端口9091，生产环境）
+- `lightweight_backend.py` - 轻量级后端API服务（FastAPI + WebSocket，端口9092，测试环境）
 - `frontend.html` - 前端配置页面
 - `app_simulator.py` - App模拟器（接收配置并验证）
 - `difficulty_config.py` - 难度配置数组（优化后的配置）
@@ -238,12 +240,13 @@ App模拟器启动
 - `simulator.py` - 游戏模拟器（赔率分析）
 - `optimize_odds.py` - 赔率优化器
 - `start.sh` / `start.py` - 启动脚本
+- `install_and_run_lightweight.sh` - 轻量级服务一键安装启动脚本
 
 ### 核心模块
 
 - `core/game_config.py` - 游戏配置管理器
 
-## 常用命令
+## 使用说明
 
 ### 启动服务
 
@@ -251,9 +254,56 @@ App模拟器启动
 # 启动Web服务器
 python3 web.py
 
+# 启动后端API服务（生产环境，端口9091）
+python3 backend.py
+
+# 启动轻量级后端API服务（测试环境，端口9092）
+python3 lightweight_backend.py
+
+# 或者使用一键安装启动脚本（推荐）
+./install_and_run_lightweight.sh
+
 # 启动App模拟器（新终端）
 python3 app_simulator.py
 ```
+
+### 访问界面
+
+- 前端配置界面: http://localhost:9090
+- 后端API文档: http://localhost:9091/docs
+- 轻量级后端API文档: http://localhost:9092/docs
+
+### WebSocket端点
+
+后端服务提供两个WebSocket端点：
+
+1. `/ws/app` - 标准WebSocket端点，用于常规App连接
+2. `/ws/lightweight` - 轻量级WebSocket端点，专为大量只读设备优化
+
+#### 轻量级WebSocket端点特点
+
+针对大量只接收数据的设备（如1万台设备），提供了专用的轻量级WebSocket端点：
+
+**特点**：
+1. 无心跳机制，减少CPU和网络开销
+2. 无反向通信，设备不发送任何数据到服务器
+3. 高效的连接管理，使用弱引用避免内存泄漏
+4. 批量消息发送，提高广播效率
+
+**使用方法**：
+```bash
+# 连接设备到轻量级WebSocket端点
+python3 app_simulator.py --endpoint /ws/lightweight
+```
+
+**优化措施**：
+1. 禁用了ping/pong心跳机制
+2. 使用弱引用集合管理连接，避免内存泄漏
+3. 并发发送消息给所有连接
+4. 减少了队列大小和消息缓冲区
+5. 移除了所有反向通信逻辑
+
+这种设计可以显著降低服务器资源消耗，支持更大规模的设备连接。
 
 ### 测试工具
 
@@ -401,20 +451,39 @@ pip3 install fastapi uvicorn websockets
 - **Web地址**：http://localhost:9091
 - **WebSocket地址**：ws://localhost:9091/ws/app
 
+## 一键安装启动脚本
+
+为了简化轻量级服务的部署，我们提供了一键安装启动脚本 [install_and_run_lightweight.sh](file:///home/lich/jzcf-config/install_and_run_lightweight.sh)。
+
+该脚本会：
+1. 检查并安装必要的依赖（fastapi, uvicorn, websockets）
+2. 检查服务是否已在运行，如果运行则停止
+3. 启动轻量级后端服务
+4. 输出服务状态和日志信息
+
+使用方法：
+```bash
+# 添加执行权限
+chmod +x install_and_run_lightweight.sh
+
+# 运行脚本
+./install_and_run_lightweight.sh
+```
+
+服务将在后台运行，日志将输出到 `lightweight_backend.log` 文件中。
+
 ## 快速开始（一键启动）
 
 ```bash
-# 1. 安装依赖
-pip3 install fastapi uvicorn websockets
+# 1. 添加执行权限并运行一键安装启动脚本
+chmod +x install_and_run_lightweight.sh
+./install_and_run_lightweight.sh
 
-# 2. 启动服务器（终端1）
-python3 web.py
-
-# 3. 启动App模拟器（终端2）
+# 2. 启动App模拟器（终端2）
 python3 app_simulator.py
 
-# 4. 打开浏览器访问
-# http://localhost:9091
+# 3. 打开浏览器访问
+# http://localhost:9092
 ```
 
 ## 系统架构
