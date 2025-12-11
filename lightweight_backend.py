@@ -288,4 +288,8 @@ async def send_to_app(request: Request, username: str = Depends(verify_credentia
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=9092)
+    # 兼容Python 3.6版本，使用替代方法启动uvicorn服务器
+    loop = asyncio.get_event_loop()
+    config = uvicorn.Config(app, host="0.0.0.0", port=9092)
+    server = uvicorn.Server(config)
+    loop.run_until_complete(server.serve())
