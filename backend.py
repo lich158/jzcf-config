@@ -17,6 +17,9 @@ security = HTTPBasic()
 USERNAME = "lich"
 PASSWORD = "123123"
 
+# 引入配置管理模块
+from config_manager import load_config, save_config
+
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
     if credentials.username != USERNAME or credentials.password != PASSWORD:
         raise HTTPException(
@@ -48,14 +51,14 @@ def init_server_default_values():
     # 营业返奖率：整体营业返奖率（包含加奖），略高于吃分返奖率
     default_data = {
         1: {'比倍难度': 20, '吃分最大值': 2000, '吃分最小值': 300, '吃分返奖率': 80, '营业返奖率': 83},
-        2: {'比倍难度': 25, '吃分最大值': 2400, '吃分最小值': 400, '吃分返奖率': 75, '营业返奖率': 78},
-        3: {'比倍难度': 30, '吃分最大值': 2800, '吃分最小值': 500, '吃分返奖率': 70, '营业返奖率': 73},
-        4: {'比倍难度': 35, '吃分最大值': 3200, '吃分最小值': 600, '吃分返奖率': 65, '营业返奖率': 68},
-        5: {'比倍难度': 40, '吃分最大值': 3600, '吃分最小值': 700, '吃分返奖率': 60, '营业返奖率': 63},
-        6: {'比倍难度': 45, '吃分最大值': 4000, '吃分最小值': 800, '吃分返奖率': 55, '营业返奖率': 58},
-        7: {'比倍难度': 50, '吃分最大值': 4400, '吃分最小值': 900, '吃分返奖率': 50, '营业返奖率': 53},
-        8: {'比倍难度': 55, '吃分最大值': 4800, '吃分最小值': 1000, '吃分返奖率': 45, '营业返奖率': 48},
-        9: {'比倍难度': 60, '吃分最大值': 5200, '吃分最小值': 1100, '吃分返奖率': 40, '营业返奖率': 43}
+        2: {'比倍难度': 25, '吃分最大값': 2400, '吃分最小값': 400, '吃分返奖率': 75, '营业返奖率': 78},
+        3: {'比倍难度': 30, '吃分最大값': 2800, '吃分最小값': 500, '吃分返奖率': 70, '营业返奖率': 73},
+        4: {'比倍难度': 35, '吃分最大값': 3200, '吃分最小값': 600, '吃分返奖率': 65, '营业返奖率': 68},
+        5: {'比倍难度': 40, '吃分最大값': 3600, '吃分最小값': 700, '吃分返奖率': 60, '营业返奖率': 63},
+        6: {'比倍难度': 45, '吃分最大값': 4000, '吃分最小값': 800, '吃分返奖率': 55, '营业返奖率': 58},
+        7: {'比倍难度': 50, '吃分最大값': 4400, '吃分最小값': 900, '吃分返奖率': 50, '营业返奖率': 53},
+        8: {'比倍难度': 55, '吃分最大값': 4800, '吃分最小값': 1000, '吃分返奖率': 45, '营业返奖率': 48},
+        9: {'比倍难度': 60, '吃分最大값': 5200, '吃分最小값': 1100, '吃分返奖率': 40, '营业返奖率': 43}
     }
     
     # 资深博彩设计：最大化刺激感，让玩家有更多中大奖的机会
@@ -106,31 +109,42 @@ def init_server_default_values():
             '彩金': 800, '开火车': 700, '统统有奖': 600, '大满贯': 300, '仙女散花': 200}
     }
     
+    # 首先尝试从持久化存储加载配置
+    persisted_config = load_config()
+    
     for difficulty in range(1, 10):
         server_default_values[difficulty] = {}
         
-        # 设置基础配置值
-        if difficulty in default_data:
-            for field, value in default_data[difficulty].items():
+        # 如果有持久化的配置，使用它；否则使用默认值
+        difficulty_key = f"难度{difficulty}"
+        if difficulty_key in persisted_config:
+            # 使用持久化配置
+            for field, value in persisted_config[difficulty_key].items():
                 server_default_values[difficulty][field] = value
-        
-        # 设置开奖奖项默认值（按难度分配，自动调整到总和10000）
-        prize_total = sum(prize_distributions[difficulty].values())
-        scale = 10000 / prize_total
-        for field in prize_fields:
-            server_default_values[difficulty][field] = int(prize_distributions[difficulty][field] * scale)
-        # 调整最后一个字段确保总和为10000
-        current_sum = sum(server_default_values[difficulty][field] for field in prize_fields)
-        server_default_values[difficulty][prize_fields[-1]] += (10000 - current_sum)
-        
-        # 设置加奖奖项默认值（按难度分配，自动调整到总和10000）
-        bonus_total = sum(bonus_distributions[difficulty].values())
-        scale = 10000 / bonus_total
-        for field in bonus_fields:
-            server_default_values[difficulty][field] = int(bonus_distributions[difficulty][field] * scale)
-        # 调整最后一个字段确保总和为10000
-        current_sum = sum(server_default_values[difficulty][field] for field in bonus_fields)
-        server_default_values[difficulty][bonus_fields[-1]] += (10000 - current_sum)
+        else:
+            # 使用默认配置
+            # 设置基础配置值
+            if difficulty in default_data:
+                for field, value in default_data[difficulty].items():
+                    server_default_values[difficulty][field] = value
+            
+            # 设置开奖奖项默认值（按难度分配，自动调整到总和10000）
+            prize_total = sum(prize_distributions[difficulty].values())
+            scale = 10000 / prize_total
+            for field in prize_fields:
+                server_default_values[difficulty][field] = int(prize_distributions[difficulty][field] * scale)
+            # 调整最后一个字段确保总和为10000
+            current_sum = sum(server_default_values[difficulty][field] for field in prize_fields)
+            server_default_values[difficulty][prize_fields[-1]] += (10000 - current_sum)
+            
+            # 设置加奖奖项默认值（按难度分配，自动调整到总和10000）
+            bonus_total = sum(bonus_distributions[difficulty].values())
+            scale = 10000 / bonus_total
+            for field in bonus_fields:
+                server_default_values[difficulty][field] = int(bonus_distributions[difficulty][field] * scale)
+            # 调整最后一个字段确保总和为10000
+            current_sum = sum(server_default_values[difficulty][field] for field in bonus_fields)
+            server_default_values[difficulty][bonus_fields[-1]] += (10000 - current_sum)
 
 # 获取所有难度的数据（JSON数组格式）
 def get_all_difficulties_data():
@@ -191,9 +205,6 @@ async def get_defaults(username: str = Depends(verify_credentials)):
 async def send_to_app(request: Request, username: str = Depends(verify_credentials)):
     body = await request.json()
     
-    # body应该是一个包含所有难度（1-9）数据的JSON对象
-    # 格式: {"难度1": {"比倍难度": 100, ...}, "难度2": {...}, ...}
-    
     # 打印接收到的数据
     print("\n" + "="*60)
     print("收到配置数据:")
@@ -216,17 +227,13 @@ async def send_to_app(request: Request, username: str = Depends(verify_credentia
             except (ValueError, TypeError):
                 continue
         print(f"已更新服务器端默认值")
-    # 兼容旧格式（数组格式）
-    elif isinstance(body, list):
-        for difficulty_data in body:
-            # 支持"难度"和"difficulty"两种格式
-            difficulty = difficulty_data.get("难度") or difficulty_data.get("difficulty")
-            if difficulty and 1 <= difficulty <= 9:
-                # 更新该难度的所有字段
-                for key, value in difficulty_data.items():
-                    if key not in ["难度", "difficulty"]:
-                        server_default_values[difficulty][key] = value
-        print(f"已更新服务器端默认值（兼容旧格式）")
+        
+        # 保存配置到持久化存储
+        try:
+            save_config(body)
+            print("配置已保存到持久化存储")
+        except Exception as e:
+            print(f"保存配置时出错: {e}")
     
     # 广播逻辑：发送给所有连接的App
     removed_clients = []
@@ -253,5 +260,7 @@ async def send_to_app(request: Request, username: str = Depends(verify_credentia
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=9092)
+    # 初始化服务器默认值
+    init_server_default_values()
+    uvicorn.run(app, host="0.0.0.0", port=9090)
 

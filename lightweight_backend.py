@@ -11,14 +11,8 @@ import json
 import weakref
 import asyncio
 import datetime
-import os
+import signal
 import sys
-
-# 添加当前目录到Python路径，以便正确导入difficulty_config
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# 导入真实的难度配置数据
-from difficulty_config import DIFFICULTY_CONFIG
 
 app = FastAPI()
 security = HTTPBasic()
@@ -26,6 +20,9 @@ security = HTTPBasic()
 # 认证信息
 USERNAME = "lich"
 PASSWORD = "123123"
+
+# 引入配置管理模块
+from config_manager import load_config, save_config
 
 def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
     if credentials.username != USERNAME or credentials.password != PASSWORD:
@@ -40,31 +37,21 @@ def verify_credentials(credentials: HTTPBasicCredentials = Depends(security)):
 # 使用弱引用集合保存轻量级连接，避免内存泄漏
 lightweight_connections = weakref.WeakSet()
 
-# 服务器端保存所有难度的默认值（使用真实配置）
+# 服务器端保存所有难度的默认值（简化版本）
 server_default_values = {}
 
-# 初始化服务器端默认值（使用真实配置）
+# 初始化服务器端默认值（简化版本）
 def init_server_default_values():
-    # 基础配置字段
-    base_fields = ['比倍难度', '吃分最大值', '吃分最小值', '吃分返奖率', '营业返奖率']
-    # 开奖奖项字段
-    prize_fields = ['三倍小奖', '苹果', '橘子', '柠檬', '金钟', '西瓜', '双星', '99', 
-                    '小bar', '中bar', '大bar', '金猪奖']
-    # 加奖奖项字段
-    bonus_fields = ['双响炮', '大四喜', '小三元', '大三元', '彩金', '开火车', '统统有奖', '大满贯', '仙女散花', '小猫变身']
+    # 从config_manager获取配置
+    difficulty_configs = load_config()
     
-    # 使用真实的难度配置数据
-    for difficulty_index, config_data in enumerate(DIFFICULTY_CONFIG):
-        difficulty = difficulty_index + 1
+    for difficulty in range(1, 10):
         server_default_values[difficulty] = {}
-        
-        # 复制所有配置字段
-        for field in base_fields + prize_fields + bonus_fields:
-            if field in config_data:
-                server_default_values[difficulty][field] = config_data[field]
-            else:
-                # 对于不存在的字段，设置默认值为0
-                server_default_values[difficulty][field] = 0
+        difficulty_key = f"难度{difficulty}"
+        if difficulty_key in difficulty_configs:
+            # 复制配置中的配置
+            for field, value in difficulty_configs[difficulty_key].items():
+                server_default_values[difficulty][field] = value
 
 # 获取所有难度的数据（JSON数组格式）
 def get_all_difficulties_data():
@@ -161,6 +148,15 @@ async def send_to_single_lightweight_device(connection, message_json):
 # 初始化服务器默认值
 init_server_default_values()
 
+# 添加信号处理器以实现优雅关闭
+def signal_handler(signum, frame):
+    print(f"收到信号 {signum}，正在优雅关闭...")
+    # 这里可以添加清理代码
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
 @app.websocket("/ws/lightweight")
 async def lightweight_websocket(websocket: WebSocket):
     """轻量级WebSocket端点，用于大量只读设备连接"""
@@ -190,21 +186,24 @@ async def send_to_app(request: Request, username: str = Depends(verify_credentia
     # 更新服务器端的默认值
     if isinstance(body, dict):
         for difficulty_key, difficulty_data in body.items():
+            # 提取难度数字（支持"难度1"或"1"格式）
+            diff_str = difficulty_key[2:] if difficulty_key.startswith("难度") else difficulty_key
             try:
-                # 支持"难度1"、"难度2"格式，也兼容"1"、"2"格式
-                if difficulty_key.startswith("难度"):
-                    difficulty = int(difficulty_key[2:])  # 去掉"难度"前缀
-                else:
-                    difficulty = int(difficulty_key)
-                if 1 <= difficulty <= 9:
-                    # 更新该难度的所有字段
-                    for key, value in difficulty_data.items():
-                        server_default_values[difficulty][key] = value
+                difficulty = int(diff_str)
+                if 1 <= difficulty <= 9 and isinstance(difficulty_data, dict):
+                    server_default_values[difficulty].update(difficulty_data)
             except (ValueError, TypeError):
                 continue
         print(f"已更新服务器端默认值")
+        
+        # 保存配置到持久化存储
+        try:
+            save_config(body)
+            print("配置已保存到持久化存储")
+        except Exception as e:
+            print(f"保存配置时出错: {e}")
     
-    # 广播给所有轻量级设备 - 发送完整的配置数据而不是部分更新
+    # 广播完整配置给所有轻量级设备
     full_config_data = get_all_difficulties_data()
     asyncio.create_task(broadcast_to_lightweight_devices(full_config_data))
 
@@ -212,8 +211,4 @@ async def send_to_app(request: Request, username: str = Depends(verify_credentia
 
 if __name__ == "__main__":
     import uvicorn
-    # 兼容Python 3.6版本，使用替代方法启动uvicorn服务器
-    loop = asyncio.get_event_loop()
-    config = uvicorn.Config(app, host="0.0.0.0", port=9092)
-    server = uvicorn.Server(config)
-    loop.run_until_complete(server.serve())
+    uvicorn.run(app, host="0.0.0.0", port=9092)

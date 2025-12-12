@@ -1,4 +1,0 @@
-  File "/home/lich/jzcf-config/web.py", line 290
-    global PASSWORD
-    ^^^^^^^^^^^^^^^
-SyntaxError: name 'PASSWORD' is used prior to global declaration
