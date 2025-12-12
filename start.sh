@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-PORT=9091
+PORT=9092
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WEB_LOG="logs/web.log"
 APP_LOG="logs/app_simulator.log"

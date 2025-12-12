@@ -20,7 +20,7 @@ os.chdir(SCRIPT_DIR)
 
 # 进程列表
 processes = []
-PORT = 9091
+PORT = 9092
 WEB_LOG = Path("logs/web.log")
 APP_LOG = Path("logs/app_simulator.log")
 

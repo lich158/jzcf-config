@@ -28,11 +28,11 @@ python3 web.py
 **服务器启动成功后会显示**
 ```
 INFO:     Started server process
-INFO:     Uvicorn running on http://0.0.0.0:9091
+INFO:     Uvicorn running on http://0.0.0.0:9092
 INFO:     Application startup complete.
 ```
 
-**访问地址**：http://localhost:9091
+**访问地址**：http://localhost:9092
 
 **登录信息**：
 - 用户名：`lich`
@@ -47,7 +47,7 @@ python3 app_simulator.py
 ```
 
 **模拟器会**：
-1. 自动连接到WebSocket服务器（ws://localhost:9091/ws/app）
+1. 自动连接到WebSocket服务器（ws://localhost:9092/ws/app）
 2. 接收服务器推送的初始配置
 3. 持续监听配置更新
 4. 显示详细的配置信息和验证结果
@@ -57,7 +57,7 @@ python3 app_simulator.py
 ================================================================================
 App模拟器启动
 ================================================================================
-目标服务器: ws://localhost:9091/ws/app
+目标服务器: ws://localhost:9092/ws/app
 等待连接...
 
 ✓ 已成功连接到服务器
@@ -116,7 +116,7 @@ App模拟器启动
 
 ### 第四步：使用配置页面
 
-1. **打开浏览器**，访问：http://localhost:9091
+1. **打开浏览器**，访问：http://localhost:9092
 2. **登录**（用户名：lich，密码：123123）
 3. **选择难度**：使用下拉框选择难度1-9
 4. **查看配置**：页面显示当前难度的所有配置值
@@ -229,7 +229,7 @@ App模拟器启动
 ### 核心文件
 
 - `web.py` - 主服务器（FastAPI + WebSocket，端口9090）
-- `backend.py` - 后端API服务（FastAPI + WebSocket，端口9091，生产环境）
+- `backend.py` - 后端API服务（FastAPI + WebSocket，端口9092，生产环境）
 - `lightweight_backend.py` - 轻量级后端API服务（FastAPI + WebSocket，端口9092，测试环境）
 - `frontend.html` - 前端配置页面
 - `app_simulator.py` - App模拟器（接收配置并验证）
@@ -254,7 +254,7 @@ App模拟器启动
 # 启动Web服务器
 python3 web.py
 
-# 启动后端API服务（生产环境，端口9091）
+# 启动后端API服务（生产环境，端口9092）
 python3 backend.py
 
 # 启动轻量级后端API服务（测试环境，端口9092）
@@ -270,7 +270,7 @@ python3 app_simulator.py
 ### 访问界面
 
 - 前端配置界面: http://localhost:9090
-- 后端API文档: http://localhost:9091/docs
+- 后端API文档: http://localhost:9092/docs
 - 轻量级后端API文档: http://localhost:9092/docs
 
 ### WebSocket端点
@@ -327,7 +327,7 @@ python3 web.py
 
 **等待显示**：
 ```
-INFO:     Uvicorn running on http://0.0.0.0:9091
+INFO:     Uvicorn running on http://0.0.0.0:9092
 ```
 
 ### 2. 启动App模拟器
@@ -347,7 +347,7 @@ python3 app_simulator.py
 ### 3. 打开配置页面
 
 **浏览器**：
-- 访问：http://localhost:9091
+- 访问：http://localhost:9092
 - 登录：lich / 123123
 
 ### 4. 修改并发送配置
@@ -376,10 +376,10 @@ Error: Address already in use
 
 **解决**：
 ```bash
-# 查找占用9091端口的进程
-lsof -i :9091
+# 查找占用9092端口的进程
+lsof -i :9092
 # 或
-netstat -tulpn | grep 9091
+netstat -tulpn | grep 9092
 
 # 杀死进程
 kill -9 <PID>
@@ -393,7 +393,7 @@ kill -9 <PID>
 
 **解决**：
 1. 确保服务器已启动（运行 `python3 web.py`）
-2. 检查端口是否为9091
+2. 检查端口是否为9092
 3. 检查防火墙设置
 
 ### 问题3：模块导入错误
@@ -447,9 +447,9 @@ pip3 install fastapi uvicorn websockets
 
 ### 端口配置
 
-- **默认端口**：9091
-- **Web地址**：http://localhost:9091
-- **WebSocket地址**：ws://localhost:9091/ws/app
+- **默认端口**：9092
+- **Web地址**：http://localhost:9092
+- **WebSocket地址**：ws://localhost:9092/ws/app
 
 ## 一键安装启动脚本
 
@@ -491,14 +491,14 @@ python3 app_simulator.py
 ```
 ┌─────────────┐
 │  浏览器     │  HTTP Basic Auth
-│  (前端)     │  ←→  http://localhost:9091
+│  (前端)     │  ←→  http://localhost:9092
 └─────────────┘
        │
        │ POST /send
        ↓
 ┌─────────────┐
 │  Web服务器  │  FastAPI + WebSocket
-│  (web.py)   │  ←→  ws://localhost:9091/ws/app
+│  (web.py)   │  ←→  ws://localhost:9092/ws/app
 └─────────────┘
        │
        │ WebSocket广播
@@ -514,7 +514,7 @@ python3 app_simulator.py
 如有问题，请检查：
 1. Python版本（需要3.7+）
 2. 依赖包是否安装完整
-3. 端口9091是否可用
+3. 端口9092是否可用
 4. 配置文件是否正确
 
 ---

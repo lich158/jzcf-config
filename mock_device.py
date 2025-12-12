@@ -8,7 +8,7 @@ import websockets
 import json
 import sys
 
-async def connect_to_server(uri="ws://localhost:9091/ws/app"):
+async def connect_to_server(uri="ws://localhost:9092/ws/app"):
     """连接到WebSocket服务器"""
     try:
         print(f"正在连接到 {uri}...")
@@ -69,7 +69,7 @@ async def connect_to_server(uri="ws://localhost:9091/ws/app"):
 
 if __name__ == "__main__":
     # 可以从命令行参数获取URI
-    uri = sys.argv[1] if len(sys.argv) > 1 else "ws://localhost:9091/ws/app"
+    uri = sys.argv[1] if len(sys.argv) > 1 else "ws://localhost:9092/ws/app"
     print("模拟设备启动")
     print(f"目标服务器: {uri}\n")
     

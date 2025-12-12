@@ -253,5 +253,5 @@ async def send_to_app(request: Request, username: str = Depends(verify_credentia
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=9091)
+    uvicorn.run(app, host="0.0.0.0", port=9092)
 
